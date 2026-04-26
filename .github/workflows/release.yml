@@ -1,0 +1,47 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: make build
+
+      - name: Package
+        run: |
+          mkdir release
+          cp xarchive2ipa release/
+          cp README.md release/
+          cd release
+          zip -r ../xarchive2ipa-macos.zip .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xarchive2ipa-macos
+          path: xarchive2ipa-macos.zip
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: xarchive2ipa-macos.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
